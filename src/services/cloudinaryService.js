@@ -5,12 +5,7 @@ import { Readable } from 'stream';
  * Predefined folder paths for different image types
  */
 export const IMAGE_PATHS = {
-    USER_PROFILE: 'fastfix/users/profiles',
-    CATEGORY: 'fastfix/categories',
-    SERVICE: 'fastfix/services',
-    BANNER: 'fastfix/banners',
-    ORDER_PROBLEM: 'fastfix/orders/problems',
-    GENERAL: 'fastfix/general'
+    GENERAL: 'galore/general'
 };
 
 /**

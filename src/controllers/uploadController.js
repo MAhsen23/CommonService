@@ -1,11 +1,6 @@
 import {
     uploadImage,
     uploadMultipleImages,
-    uploadUserProfile,
-    uploadCategoryImage,
-    uploadServiceImage,
-    uploadBannerImage,
-    uploadOrderProblemPictures,
     IMAGE_PATHS
 } from '../services/cloudinaryService.js';
 
@@ -14,7 +9,8 @@ import {
  * POST /api/upload
  * 
  * Query Parameters:
- * - type: 'user' | 'category' | 'service' | 'banner' | 'order' | 'general'
+ * - path: Optional folder path (e.g., 'galore/users/profiles')
+ *          If not provided, images will be saved in the general folder
  * 
  * Body:
  * - For single image: use 'image' field
@@ -22,16 +18,8 @@ import {
  */
 export const uploadImagesHandler = async (req, res) => {
     try {
-        const { type = 'general' } = req.query;
-        const validTypes = ['user', 'category', 'service', 'banner', 'order', 'general'];
-        if (!validTypes.includes(type)) {
-            return res.status(400).json({
-                success: false,
-                status: 'ERROR',
-                message: `Please provide a valid type.`,
-                data: null
-            });
-        }
+        const { path } = req.query;
+        const folder = path || IMAGE_PATHS.GENERAL;
 
         const singleFile = req.file;
         const multipleFiles = req.files;
@@ -47,27 +35,7 @@ export const uploadImagesHandler = async (req, res) => {
 
         let results = [];
         if (singleFile) {
-            let result;
-
-            switch (type) {
-                case 'user':
-                    result = await uploadUserProfile(singleFile.buffer, req.user?.id);
-                    break;
-                case 'category':
-                    result = await uploadCategoryImage(singleFile.buffer, req.body?.categoryId);
-                    break;
-                case 'service':
-                    result = await uploadServiceImage(singleFile.buffer, req.body?.serviceId);
-                    break;
-                case 'banner':
-                    result = await uploadBannerImage(singleFile.buffer, req.body?.bannerId);
-                    break;
-                case 'order':
-                    result = await uploadImage(singleFile.buffer, IMAGE_PATHS.ORDER_PROBLEM);
-                    break;
-                default:
-                    result = await uploadImage(singleFile.buffer, IMAGE_PATHS.GENERAL);
-            }
+            const result = await uploadImage(singleFile.buffer, folder);
 
             results.push({
                 url: result.url,
@@ -80,16 +48,7 @@ export const uploadImagesHandler = async (req, res) => {
 
         else if (multipleFiles && Array.isArray(multipleFiles)) {
             const images = multipleFiles.map(file => file.buffer);
-            let uploadResults;
-
-            switch (type) {
-                case 'order':
-                    uploadResults = await uploadOrderProblemPictures(images, req.body?.orderId);
-                    break;
-                default:
-                    const folder = IMAGE_PATHS[type.toUpperCase()] || IMAGE_PATHS.GENERAL;
-                    uploadResults = await uploadMultipleImages(images, folder);
-            }
+            const uploadResults = await uploadMultipleImages(images, folder);
 
             results = uploadResults.map(result => ({
                 url: result.url,
@@ -137,12 +96,13 @@ export const uploadImagesHandler = async (req, res) => {
  * Body:
  * {
  *   "image": "data:image/jpeg;base64,...",
- *   "type": "user" | "category" | "service" | "banner" | "order" | "general"
+ *   "path": "optional-folder-path" (e.g., 'galore/users/profiles')
+ *          If not provided, image will be saved in the general folder
  * }
  */
 export const uploadBase64Handler = async (req, res) => {
     try {
-        const { image, type = 'general' } = req.body || {};
+        const { image, path } = req.body || {};
 
         if (!image) {
             return res.status(400).json({
@@ -153,37 +113,8 @@ export const uploadBase64Handler = async (req, res) => {
             });
         }
 
-        const validTypes = ['user', 'category', 'service', 'banner', 'order', 'general'];
-        if (!validTypes.includes(type)) {
-            return res.status(400).json({
-                success: false,
-                status: 'ERROR',
-                message: `Please provide a valid type.`,
-                data: null
-            });
-        }
-
-        let result;
-
-        switch (type) {
-            case 'user':
-                result = await uploadUserProfile(image, req.user?.id);
-                break;
-            case 'category':
-                result = await uploadCategoryImage(image, req.body?.categoryId);
-                break;
-            case 'service':
-                result = await uploadServiceImage(image, req.body?.serviceId);
-                break;
-            case 'banner':
-                result = await uploadBannerImage(image, req.body?.bannerId);
-                break;
-            case 'order':
-                result = await uploadImage(image, IMAGE_PATHS.ORDER_PROBLEM);
-                break;
-            default:
-                result = await uploadImage(image, IMAGE_PATHS.GENERAL);
-        }
+        const folder = path || IMAGE_PATHS.GENERAL;
+        const result = await uploadImage(image, folder);
 
         res.status(200).json({
             success: true,
