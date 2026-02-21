@@ -1,5 +1,5 @@
 {
-  "name": "mediaservice",
+  "name": "common-service",
   "version": "1.0.0",
   "type": "module",
   "main": "src/server.js",
@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Media Service - A modern Node.js media service application",
+  "description": "CommonService - Common APIs and modules (contact form, media, etc.)",
   "dependencies": {
     "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
@@ -19,7 +19,8 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "morgan": "^1.10.1",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "nodemailer": "^6.9.16"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

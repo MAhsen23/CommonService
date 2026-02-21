@@ -8,7 +8,7 @@ if (!isVercel) {
     const PORT = config.port;
     try {
         app.listen(PORT, () => {
-            print(`Media Service server running in ${config.env} mode on port ${PORT}`);
+            print(`CommonService server running in ${config.env} mode on port ${PORT}`);
         });
     } catch (err) {
         print('Failed to start server', err.message);
