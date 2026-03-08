@@ -14,33 +14,26 @@ function createTransporter() {
         auth: {
             user: smtp.user,
             pass: smtp.pass
+        },
+        tls: {
+            rejectUnauthorized: false
         }
     });
 }
 
-/**
- * Build HTML email body for contact form submission.
- * Professional, simple template; Nunito font, no shadows.
- */
-function buildContactEmailHtml(data) {
-    const rows = [
-        { label: 'Name', value: data.name },
-        { label: 'Email', value: data.email },
-        { label: 'Phone', value: data.phone },
-        { label: 'Budget', value: data.budget || '—' },
-        { label: 'Protect with NDA', value: data.protectWithNda ? 'Yes' : 'No' }
-    ];
-    if (data.scheduleDateTime) {
-        rows.push({ label: 'Schedule date & time', value: data.scheduleDateTime });
-    }
-    rows.push({ label: 'Description', value: data.description || '—' });
+function escapeHtml(text) {
+    if (text == null) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return String(text).replace(/[&<>"']/g, (c) => map[c]);
+}
 
+function buildEmailHtml({ title, accentColor, badgeLabel, rows }) {
     const rowsHtml = rows
         .map(
             (r) => `
     <tr>
-      <td style="font-family: 'Nunito', sans-serif; padding: 10px 16px; border: 1px solid #e5e7eb; color: #374151; font-size: 14px; font-weight: 600; width: 160px;">${escapeHtml(r.label)}</td>
-      <td style="font-family: 'Nunito', sans-serif; padding: 10px 16px; border: 1px solid #e5e7eb; color: #111827; font-size: 14px;">${escapeHtml(String(r.value))}</td>
+      <td style="font-family: 'Nunito', sans-serif; padding: 12px 20px; border-bottom: 1px solid #f0f0f0; color: #6b7280; font-size: 13px; font-weight: 600; width: 180px; white-space: nowrap; vertical-align: top;">${escapeHtml(r.label)}</td>
+      <td style="font-family: 'Nunito', sans-serif; padding: 12px 20px; border-bottom: 1px solid #f0f0f0; color: #111827; font-size: 13px; vertical-align: top;">${escapeHtml(String(r.value))}</td>
     </tr>`
         )
         .join('');
@@ -50,36 +43,102 @@ function buildContactEmailHtml(data) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact form submission</title>
+  <title>${escapeHtml(title)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body style="margin: 0; padding: 24px; background-color: #f9fafb; font-family: 'Nunito', sans-serif;">
-  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-    <div style="padding: 20px 24px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
-      <h1 style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 700; color: #111827;">New contact form submission</h1>
+<body style="margin: 0; padding: 32px 16px; background-color: #f3f4f6; font-family: 'Nunito', sans-serif;">
+  <div style="max-width: 580px; margin: 0 auto;">
+
+    <!-- Header -->
+    <div style="background: ${accentColor}; border-radius: 8px 8px 0 0; padding: 28px 32px;">
+      <div style="display: inline-block; background: rgba(255,255,255,0.15); border-radius: 4px; padding: 3px 10px; margin-bottom: 10px;">
+        <span style="font-family: 'Nunito', sans-serif; font-size: 11px; font-weight: 700; color: #ffffff; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(badgeLabel)}</span>
+      </div>
+      <h1 style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 700; color: #ffffff;">${escapeHtml(title)}</h1>
     </div>
-    <table style="width: 100%; border-collapse: collapse; font-family: 'Nunito', sans-serif;">
-      ${rowsHtml}
-    </table>
-    <div style="padding: 16px 24px; font-family: 'Nunito', sans-serif; font-size: 12px; color: #6b7280;">
-      Sent via CommonService contact API
+
+    <!-- Body -->
+    <div style="background: #ffffff; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse;">
+        ${rowsHtml}
+      </table>
+
+      <!-- Footer -->
+      <div style="padding: 16px 20px; background: #f9fafb; border-top: 1px solid #f0f0f0;">
+        <p style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 12px; color: #9ca3af;">
+          Sent via TechOriginators website
+        </p>
+      </div>
     </div>
+
   </div>
 </body>
 </html>`;
 }
 
-function escapeHtml(text) {
-    if (text == null) return '';
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-    return String(text).replace(/[&<>"']/g, (c) => map[c]);
+function buildContactEmailHtml(data) {
+    const rows = [
+        { label: 'Name', value: data.name },
+        { label: 'Email', value: data.email },
+        { label: 'Phone', value: data.phone },
+        { label: 'Budget', value: data.budget || '—' },
+        { label: 'Protect with NDA', value: data.protectWithNda ? 'Yes' : 'No' }
+    ];
+    if (data.scheduleDateTime) {
+        rows.push({ label: 'Schedule Date & Time', value: data.scheduleDateTime });
+    }
+    rows.push({ label: 'Description', value: data.description || '—' });
+
+    return buildEmailHtml({
+        title: 'New Contact Form Submission',
+        accentColor: '#2563eb',
+        badgeLabel: 'Contact',
+        rows
+    });
+}
+
+function buildConsultationEmailHtml(data) {
+    const rows = [
+        { label: 'Name', value: data.name },
+        { label: 'Email', value: data.email },
+        { label: 'Phone', value: data.phone },
+        { label: 'Budget', value: data.budget || '—' },
+        { label: 'Funding', value: data.funding || '—' },
+        { label: 'Protect with NDA', value: data.protectWithNda ? 'Yes' : 'No' }
+    ];
+    if (data.scheduleDateTime) {
+        rows.push({ label: 'Schedule Date & Time', value: data.scheduleDateTime });
+    }
+    rows.push({ label: 'Description', value: data.description || '—' });
+
+    return buildEmailHtml({
+        title: 'New Consultation Request',
+        accentColor: '#7c3aed',
+        badgeLabel: 'Consultation',
+        rows
+    });
+}
+
+function buildPlainText(data) {
+    const lines = [
+        `Type: ${data.type === 'consultation' ? 'Consultation' : 'Contact'}`,
+        `Name: ${data.name}`,
+        `Email: ${data.email}`,
+        `Phone: ${data.phone}`,
+        `Budget: ${data.budget || '—'}`,
+        data.type === 'consultation' ? `Funding: ${data.funding || '—'}` : '',
+        `Protect with NDA: ${data.protectWithNda ? 'Yes' : 'No'}`,
+        data.scheduleDateTime ? `Schedule: ${data.scheduleDateTime}` : '',
+        `Description: ${data.description || '—'}`
+    ];
+    return lines.filter(Boolean).join('\n');
 }
 
 /**
- * Send contact form data via SMTP.
- * @param {Object} data - { name, email, phone, budget, description, protectWithNda, scheduleDateTime? }
+ * Send contact or consultation form data via SMTP.
+ * @param {Object} data - { type, name, email, phone, budget, description, protectWithNda, scheduleDateTime?, funding? }
  * @returns {{ success: boolean, messageId?: string, error?: string }}
  */
 export async function sendContactEmail(data) {
@@ -93,8 +152,13 @@ export async function sendContactEmail(data) {
         return { success: false, error: 'No recipient email configured' };
     }
 
-    const html = buildContactEmailHtml(data);
-    const subject = `Contact form: ${escapeHtml(data.name || 'Unknown')}`;
+    const isConsultation = data.type === 'consultation';
+    const html = isConsultation
+        ? buildConsultationEmailHtml(data)
+        : buildContactEmailHtml(data);
+    const subject = isConsultation
+        ? `Consultation Request: ${data.name || 'Unknown'}`
+        : `Contact Form: ${data.name || 'Unknown'}`;
 
     try {
         const info = await transporter.sendMail({
@@ -103,17 +167,7 @@ export async function sendContactEmail(data) {
             replyTo: data.email || undefined,
             subject,
             html,
-            text: [
-                `Name: ${data.name}`,
-                `Email: ${data.email}`,
-                `Phone: ${data.phone}`,
-                `Budget: ${data.budget || '—'}`,
-                `Protect with NDA: ${data.protectWithNda ? 'Yes' : 'No'}`,
-                data.scheduleDateTime ? `Schedule: ${data.scheduleDateTime}` : '',
-                `Description: ${data.description || '—'}`
-            ]
-                .filter(Boolean)
-                .join('\n')
+            text: buildPlainText(data)
         });
         return { success: true, messageId: info.messageId };
     } catch (err) {
