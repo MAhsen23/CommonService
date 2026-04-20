@@ -8,7 +8,29 @@ import contactRoutes from './routes/contactRoutes.js';
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+
+const allowedOrigins = (
+    process.env.CORS_ORIGINS ||
+    'https://www.powerpeptides.ca,https://powerpeptides.ca'
+)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+const corsOptions = {
+    origin: (origin, cb) => {
+        if (!origin) return cb(null, true);
+        if (allowedOrigins.includes(origin)) return cb(null, true);
+        return cb(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: false,
+    optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
