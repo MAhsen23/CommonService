@@ -9,20 +9,8 @@ const app = express();
 
 app.use(helmet());
 
-const allowedOrigins = (
-    process.env.CORS_ORIGINS ||
-    'https://www.powerpeptides.ca,https://powerpeptides.ca'
-)
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-
 const corsOptions = {
-    origin: (origin, cb) => {
-        if (!origin) return cb(null, true);
-        if (allowedOrigins.includes(origin)) return cb(null, true);
-        return cb(new Error('Not allowed by CORS'));
-    },
+    origin: '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: false,
