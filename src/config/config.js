@@ -17,5 +17,10 @@ export default {
         pass: process.env.SMTP_PASS,
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: process.env.CONTACT_EMAIL || process.env.SMTP_USER
+    },
+    devlysMail: {
+        user: process.env.GMAIL_EMAIL_USER,
+        pass: process.env.GMAIL_EMAIL_PASS,
+        to: process.env.DEVLYS_RECEIVER_EMAIL
     }
 };

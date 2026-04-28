@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import config from '../config/config.js';
 
 const smtp = config.smtp;
+const devlysMail = config.devlysMail;
 
 function createTransporter() {
     if (!smtp.host || !smtp.user || !smtp.pass) {
@@ -17,6 +18,20 @@ function createTransporter() {
         },
         tls: {
             rejectUnauthorized: false
+        }
+    });
+}
+
+function createDevlysTransporter() {
+    if (!devlysMail?.user || !devlysMail?.pass) {
+        return null;
+    }
+
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: devlysMail.user,
+            pass: devlysMail.pass
         }
     });
 }
@@ -168,6 +183,68 @@ export async function sendContactEmail(data) {
             subject,
             html,
             text: buildPlainText(data)
+        });
+        return { success: true, messageId: info.messageId };
+    } catch (err) {
+        return { success: false, error: err.message || 'Failed to send email' };
+    }
+}
+
+function buildDevlysEmailHtml(data) {
+    const rows = [
+        { label: 'Name', value: data.name || '—' },
+        { label: 'Email', value: data.email || '—' },
+        { label: 'Phone', value: data.phone || '—' },
+        { label: 'Subject', value: data.subject || '—' },
+        { label: 'Message', value: data.message || data.description || '—' }
+    ];
+
+    return buildEmailHtml({
+        title: 'New Devlys Contact Submission',
+        accentColor: '#111827',
+        badgeLabel: 'Devlys',
+        rows
+    });
+}
+
+function buildDevlysPlainText(data) {
+    const lines = [
+        `Name: ${data.name || '—'}`,
+        `Email: ${data.email || '—'}`,
+        `Phone: ${data.phone || '—'}`,
+        `Subject: ${data.subject || '—'}`,
+        `Message: ${data.message || data.description || '—'}`
+    ];
+    return lines.join('\n');
+}
+
+/**
+ * Send Devlys contact form via Gmail SMTP.
+ * @param {Object} data - { name, email, phone, subject?, message? }
+ * @returns {{ success: boolean, messageId?: string, error?: string }}
+ */
+export async function sendDevlysContactEmail(data) {
+    const transporter = createDevlysTransporter();
+    if (!transporter) {
+        return { success: false, error: 'Devlys email is not configured' };
+    }
+
+    const to = devlysMail?.to;
+    if (!to) {
+        return { success: false, error: 'No Devlys receiver email configured' };
+    }
+
+    const from = devlysMail.user;
+    const subject = `Devlys Contact: ${data.subject ? data.subject : (data.name || 'Unknown')}`;
+
+    try {
+        const info = await transporter.sendMail({
+            from,
+            to,
+            replyTo: data.email || undefined,
+            subject,
+            html: buildDevlysEmailHtml(data),
+            text: buildDevlysPlainText(data)
         });
         return { success: true, messageId: info.messageId };
     } catch (err) {
