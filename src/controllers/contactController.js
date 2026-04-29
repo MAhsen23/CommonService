@@ -48,7 +48,7 @@ export async function submitContact(req, res, next) {
 }
 
 /**
- * POST /api/contact/devlys — submit Devlys contact form and send email via Gmail SMTP
+ * POST /api/contact/devlys — submit Devlys contact form and send email via Resend
  * Body (flexible): name, email, phone, subject, message (or description)
  */
 export async function submitDevlysContact(req, res, next) {

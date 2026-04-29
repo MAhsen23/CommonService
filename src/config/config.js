@@ -19,8 +19,8 @@ export default {
         to: process.env.CONTACT_EMAIL || process.env.SMTP_USER
     },
     devlysMail: {
-        user: process.env.GMAIL_EMAIL_USER,
-        pass: process.env.GMAIL_EMAIL_PASS,
+        resendApiKey: process.env.RESEND_API_KEY,
+        from: process.env.DEVLYS_FROM || 'onboarding@resend.dev',
         to: process.env.DEVLYS_RECEIVER_EMAIL
     }
 };

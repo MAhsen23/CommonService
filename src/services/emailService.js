@@ -22,27 +22,13 @@ function createTransporter() {
     });
 }
 
-function createDevlysTransporter() {
-    if (!devlysMail?.user || !devlysMail?.pass) {
-        return null;
-    }
-
-    return nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: devlysMail.user,
-            pass: devlysMail.pass
-        }
-    });
-}
-
 function escapeHtml(text) {
     if (text == null) return '';
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
     return String(text).replace(/[&<>"']/g, (c) => map[c]);
 }
 
-function buildEmailHtml({ title, accentColor, badgeLabel, rows }) {
+function buildEmailHtml({ title, accentColor, badgeLabel, rows, footerText }) {
     const rowsHtml = rows
         .map(
             (r) => `
@@ -52,6 +38,17 @@ function buildEmailHtml({ title, accentColor, badgeLabel, rows }) {
     </tr>`
         )
         .join('');
+
+    const safeFooterText = footerText == null ? 'Sent via TechOriginators website' : String(footerText);
+    const footerHtml = safeFooterText.trim()
+        ? `
+      <!-- Footer -->
+      <div style="padding: 16px 20px; background: #f9fafb; border-top: 1px solid #f0f0f0;">
+        <p style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 12px; color: #9ca3af;">
+          ${escapeHtml(safeFooterText)}
+        </p>
+      </div>`
+        : '';
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -79,13 +76,7 @@ function buildEmailHtml({ title, accentColor, badgeLabel, rows }) {
       <table style="width: 100%; border-collapse: collapse;">
         ${rowsHtml}
       </table>
-
-      <!-- Footer -->
-      <div style="padding: 16px 20px; background: #f9fafb; border-top: 1px solid #f0f0f0;">
-        <p style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 12px; color: #9ca3af;">
-          Sent via TechOriginators website
-        </p>
-      </div>
+${footerHtml}
     </div>
 
   </div>
@@ -110,7 +101,8 @@ function buildContactEmailHtml(data) {
         title: 'New Contact Form Submission',
         accentColor: '#2563eb',
         badgeLabel: 'Contact',
-        rows
+        rows,
+        footerText: 'Sent via TechOriginators website'
     });
 }
 
@@ -132,7 +124,8 @@ function buildConsultationEmailHtml(data) {
         title: 'New Consultation Request',
         accentColor: '#7c3aed',
         badgeLabel: 'Consultation',
-        rows
+        rows,
+        footerText: 'Sent via TechOriginators website'
     });
 }
 
@@ -203,7 +196,8 @@ function buildDevlysEmailHtml(data) {
         title: 'New Devlys Contact Submission',
         accentColor: '#111827',
         badgeLabel: 'Devlys',
-        rows
+        rows,
+        footerText: 'Sent via Devlys website'
     });
 }
 
@@ -219,34 +213,55 @@ function buildDevlysPlainText(data) {
 }
 
 /**
- * Send Devlys contact form via Gmail SMTP.
+ * Send Devlys contact form via Resend API.
  * @param {Object} data - { name, email, phone, subject?, message? }
  * @returns {{ success: boolean, messageId?: string, error?: string }}
  */
 export async function sendDevlysContactEmail(data) {
-    const transporter = createDevlysTransporter();
-    if (!transporter) {
-        return { success: false, error: 'Devlys email is not configured' };
-    }
-
+    const apiKey = devlysMail?.resendApiKey;
     const to = devlysMail?.to;
+    const from = devlysMail?.from;
+
+    if (!apiKey) {
+        return { success: false, error: 'Resend is not configured (missing RESEND_API_KEY)' };
+    }
     if (!to) {
-        return { success: false, error: 'No Devlys receiver email configured' };
+        return { success: false, error: 'No Devlys receiver email configured (missing RECEIVER_EMAIL)' };
+    }
+    if (!from) {
+        return { success: false, error: 'No Devlys from email configured (missing DEVLYS_FROM)' };
     }
 
-    const from = devlysMail.user;
     const subject = `Devlys Contact: ${data.subject ? data.subject : (data.name || 'Unknown')}`;
 
     try {
-        const info = await transporter.sendMail({
+        const payload = {
             from,
-            to,
-            replyTo: data.email || undefined,
+            to: Array.isArray(to) ? to : [to],
             subject,
             html: buildDevlysEmailHtml(data),
-            text: buildDevlysPlainText(data)
+            text: buildDevlysPlainText(data),
+            reply_to: data.email || undefined
+        };
+
+        const resp = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
         });
-        return { success: true, messageId: info.messageId };
+
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok) {
+            const msg =
+                (json && (json.message || json.error)) ||
+                `Resend request failed with status ${resp.status}`;
+            return { success: false, error: msg };
+        }
+
+        return { success: true, messageId: json?.id };
     } catch (err) {
         return { success: false, error: err.message || 'Failed to send email' };
     }
