@@ -1,6 +1,6 @@
 import express from 'express';
 import * as uploadController from '../controllers/uploadController.js';
-import { uploadSingle, uploadMultiple } from '../middleware/upload.js';
+import { uploadSingle, uploadMultiple, uploadFiles } from '../middleware/upload.js';
 
 const router = express.Router();
 
