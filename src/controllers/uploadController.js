@@ -1,7 +1,8 @@
 import {
     uploadImage,
     uploadMultipleImages,
-    IMAGE_PATHS
+    IMAGE_PATHS,
+    uploadFile
 } from '../services/cloudinaryService.js';
 
 /**
