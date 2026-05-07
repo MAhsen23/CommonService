@@ -157,8 +157,7 @@ export const uploadFilesHandler = async (req, res) => {
         }
 
         const uploadPromises = files.map(file => {
-            const isPdf = file.mimetype === 'application/pdf';
-            return uploadFile(file.buffer, folder, isPdf ? 'raw' : 'image');
+            return uploadFile(file.buffer, folder, file.mimetype);
         });
 
         const uploadResults = await Promise.all(uploadPromises);
