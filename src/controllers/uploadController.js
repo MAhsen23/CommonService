@@ -163,7 +163,7 @@ export const uploadFilesHandler = async (req, res) => {
         const uploadResults = await Promise.all(uploadPromises);
 
         const results = uploadResults.map((result, i) => ({
-            url: result.secure_url,
+            url: result.url,
             public_id: result.public_id,
             format: result.format,
             resource_type: result.resource_type,
