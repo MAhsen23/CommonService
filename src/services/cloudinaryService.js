@@ -5,7 +5,7 @@ import { Readable } from 'stream';
  * Predefined folder paths for different image types
  */
 export const IMAGE_PATHS = {
-    GENERAL: 'galore/general'
+    GENERAL: 'general'
 };
 
 /**

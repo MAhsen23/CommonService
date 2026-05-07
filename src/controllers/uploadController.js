@@ -10,7 +10,7 @@ import {
  * POST /api/upload
  * 
  * Query Parameters:
- * - path: Optional folder path (e.g., 'galore/users/profiles')
+ * - path: Optional folder path (e.g., 'users/profiles')
  *          If not provided, images will be saved in the general folder
  * 
  * Body:
@@ -97,7 +97,7 @@ export const uploadImagesHandler = async (req, res) => {
  * Body:
  * {
  *   "image": "data:image/jpeg;base64,...",
- *   "path": "optional-folder-path" (e.g., 'galore/users/profiles')
+ *   "path": "optional-folder-path" (e.g., 'users/profiles')
  *          If not provided, image will be saved in the general folder
  * }
  */
