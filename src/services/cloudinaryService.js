@@ -306,3 +306,54 @@ export const uploadOrderProblemPictures = async (images, orderId = null) => {
     return uploadMultipleImages(images, IMAGE_PATHS.ORDER_PROBLEM, options);
 };
 
+/**
+ * Upload a single file (image or PDF) to Cloudinary
+ *
+ * @param {Buffer} fileBuffer - File buffer from multer
+ * @param {string} folder     - Destination folder in Cloudinary
+ * @param {string} mimetype   - File mimetype (e.g. 'application/pdf', 'image/jpeg')
+ * @returns {Promise<object>} Upload result
+ */
+export const uploadFile = async (fileBuffer, folder = IMAGE_PATHS.GENERAL, mimetype = 'image/jpeg') => {
+    try {
+        if (!fileBuffer) {
+            throw new Error('File buffer is required');
+        }
+
+        const isPdf = mimetype === 'application/pdf';
+
+        const uploadOptions = {
+            folder,
+            resource_type: isPdf ? 'raw' : 'image',
+            ...(!isPdf && {
+                transformation: [{ quality: 'auto', fetch_format: 'auto' }]
+            })
+        };
+
+        const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                uploadOptions,
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            bufferToStream(fileBuffer).pipe(uploadStream);
+        });
+
+        return {
+            url: uploadResult.secure_url,
+            public_id: uploadResult.public_id,
+            format: uploadResult.format,
+            resource_type: uploadResult.resource_type,
+            bytes: uploadResult.bytes,
+            created_at: uploadResult.created_at,
+            ...(uploadResult.resource_type === 'image' && {
+                width: uploadResult.width,
+                height: uploadResult.height,
+            }),
+        };
+    } catch (error) {
+        throw new Error(`Failed to upload file: ${error.message}`);
+    }
+};

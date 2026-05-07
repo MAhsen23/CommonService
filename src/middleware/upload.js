@@ -44,5 +44,27 @@ export const uploadFields = (fields) => {
     return upload.fields(fields);
 };
 
-export default upload;
+const uploadFilesInstance = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const allowedMimes = [
+            'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+            'application/pdf',
+        ];
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only images and PDFs are allowed.'), false);
+        }
+    },
+    limits: {
+        fileSize: 20 * 1024 * 1024,
+        files: 10,
+    },
+});
 
+export const uploadFiles = (fieldName = 'files', maxCount = 10) => {
+    return uploadFilesInstance.array(fieldName, maxCount);
+};
+
+export default upload;

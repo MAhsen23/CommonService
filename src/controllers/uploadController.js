@@ -140,3 +140,55 @@ export const uploadBase64Handler = async (req, res) => {
     }
 };
 
+export const uploadFilesHandler = async (req, res) => {
+    try {
+        const { path } = req.query;
+        const folder = path || IMAGE_PATHS.GENERAL;
+        const files = req.files;
+
+        if (!files || files.length === 0) {
+            return res.status(400).json({
+                success: false,
+                status: 'ERROR',
+                message: 'No files provided.',
+                data: null
+            });
+        }
+
+        const uploadPromises = files.map(file => {
+            const isPdf = file.mimetype === 'application/pdf';
+            return uploadFile(file.buffer, folder, isPdf ? 'raw' : 'image');
+        });
+
+        const uploadResults = await Promise.all(uploadPromises);
+
+        const results = uploadResults.map((result, i) => ({
+            url: result.secure_url,
+            public_id: result.public_id,
+            format: result.format,
+            resource_type: result.resource_type,
+            size: files[i].size,
+            ...(result.resource_type === 'image' && {
+                width: result.width,
+                height: result.height,
+            }),
+        }));
+
+        res.status(200).json({
+            success: true,
+            status: 'OK',
+            message: `${results.length} file(s) uploaded successfully`,
+            data: {
+                files: results,
+                count: results.length,
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            status: 'ERROR',
+            message: error.message || 'Failed to upload files',
+            data: null
+        });
+    }
+};
